@@ -1,0 +1,27 @@
+# DEMO FILE — Intentionally vulnerable workflow
+# Mirrors the pattern exploited in the Trivy attack (March 2026)
+# DO NOT use in real repos
+
+name: CI (Vulnerable)
+
+on:
+  pull_request_target:         # <-- runs in BASE repo context (has access to secrets)
+    types: [opened, synchronize]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write            # <-- overly broad: allows delete/rename/publish
+      packages: write
+    steps:
+      - name: Checkout PR code  # <-- FATAL: checks out ATTACKER-controlled code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Run tests          # <-- now runs attacker's script with base repo token
+        run: bash ./scripts/test.sh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # exposed to attacker's script
+          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}      # org-level PAT — game over

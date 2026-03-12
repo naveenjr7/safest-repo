@@ -1,0 +1,37 @@
+# FIXED workflow — safe pattern
+# Separates untrusted code execution from privileged operations
+
+name: CI (Fixed)
+
+on:
+  pull_request:                  # <-- use pull_request (not pull_request_target)
+    types: [opened, synchronize] #     runs in FORK context — no access to secrets
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read             # <-- least privilege: read-only
+    steps:
+      - name: Checkout PR code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Run tests
+        run: bash ./scripts/test.sh
+        # No secrets passed here — untrusted code runs isolated
+
+  # Privileged job runs ONLY after tests pass, on base branch code
+  publish:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'   # only on merge, not on PR
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4              # checks out BASE branch (trusted)
+      - name: Publish release
+        run: bash ./scripts/publish.sh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
